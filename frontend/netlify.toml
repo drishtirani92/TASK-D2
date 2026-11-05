@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# React Router handles the pages, so every address must load index.html.
+# Without this, refreshing /pricing or /login on Netlify shows "Page not found".
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
