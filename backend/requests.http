@@ -1,0 +1,121 @@
+@baseUrl = http://localhost:5000
+
+### Health check
+GET {{baseUrl}}/api/health
+
+### Register (201 on success, 409 if the email already exists)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "email": "test.user@example.com",
+  "password": "Password1",
+  "confirmPassword": "Password1"
+}
+
+### Register with a weak password (should be 400)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "email": "test.user@example.com",
+  "password": "abc",
+  "confirmPassword": "abc"
+}
+
+### Login (200 and a token)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "test.user@example.com", "password": "Password1" }
+
+### Wrong password (should be 401)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "test.user@example.com", "password": "WrongPassword1" }
+
+### Current user (needs the token from the login request above)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### Current user without a token (should be 401)
+GET {{baseUrl}}/api/auth/me
+
+### Save a post (201)
+POST {{baseUrl}}/api/posts
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "type": "question",
+  "plan": "free",
+  "title": "How do React hooks work?",
+  "description": "I am confused about when useEffect runs, can someone explain?",
+  "tags": ["react", "hooks"]
+}
+
+### Save a post without a plan (should be 400)
+POST {{baseUrl}}/api/posts
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "type": "question",
+  "title": "How do React hooks work?",
+  "description": "I am confused about when useEffect runs, can someone explain?",
+  "tags": ["react"]
+}
+
+### Save a post without logging in (should be 401)
+POST {{baseUrl}}/api/posts
+Content-Type: application/json
+
+{ "type": "question", "plan": "free", "title": "Hello there", "description": "A question that is long enough", "tags": ["react"] }
+
+### Browse posts as a visitor (Free posts only, viewer.plan = visitor)
+GET {{baseUrl}}/api/posts
+
+### Browse posts when logged in (Free user: Free posts only. Paid user: everything)
+GET {{baseUrl}}/api/posts
+Authorization: Bearer {{login.response.body.token}}
+
+### One whole post (replace POST_ID with an id from the list. Paid posts give 403 unless you are Paid)
+GET {{baseUrl}}/api/posts/POST_ID
+Authorization: Bearer {{login.response.body.token}}
+
+### Upgrade plan with the demo test card (200, or 409 if already Paid)
+POST {{baseUrl}}/api/plan/upgrade
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "billingCycle": "monthly",
+  "card": {
+    "name": "Test User",
+    "number": "4242 4242 4242 4242",
+    "expiry": "12/30",
+    "cvc": "123"
+  }
+}
+
+### Upgrade with an invalid card number (should be 400)
+POST {{baseUrl}}/api/plan/upgrade
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "billingCycle": "monthly",
+  "card": { "name": "Test User", "number": "1234 5678 9012 3456", "expiry": "12/30", "cvc": "123" }
+}
+
+### Subscribe to the newsletter (sends a real email, use your own address)
+POST {{baseUrl}}/api/subscribe
+Content-Type: application/json
+
+{ "email": "your-email@example.com" }
